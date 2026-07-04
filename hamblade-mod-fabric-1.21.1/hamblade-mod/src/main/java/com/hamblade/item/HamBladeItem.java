@@ -11,6 +11,7 @@ import net.minecraft.item.SwordItem;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -67,3 +68,75 @@ public class HamBladeItem extends SwordItem {
         }
 
         return super.postHit(stack, target, attacker);
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
+        super.inventoryTick(stack, world, entity, slot, selected);
+        if (selected && !world.isClient && world instanceof ServerWorld serverWorld) {
+            if (world.getTime() % 5 == 0) {
+                serverWorld.spawnParticles(ParticleTypes.END_ROD,
+                        entity.getX(), entity.getY() + 1.0, entity.getZ(),
+                        2, 0.3, 0.3, 0.3, 0.02);
+            }
+        }
+    }
+
+    private void spawnChargeParticles(World world, LivingEntity target, int charge) {
+        if (world instanceof ServerWorld serverWorld) {
+            int count = charge * 5;
+            serverWorld.spawnParticles(ParticleTypes.ELECTRIC_SPARK,
+                    target.getX(), target.getY() + 1.0, target.getZ(),
+                    count, 0.3, 0.3, 0.3, 0.1);
+            serverWorld.spawnParticles(ParticleTypes.END_ROD,
+                    target.getX(), target.getY() + 1.0, target.getZ(),
+                    count, 0.2, 0.5, 0.2, 0.05);
+        }
+    }
+
+    private void spawnDischargeParticles(World world, LivingEntity target) {
+        if (world instanceof ServerWorld serverWorld) {
+            serverWorld.spawnParticles(ParticleTypes.FLASH,
+                    target.getX(), target.getY() + 1.0, target.getZ(),
+                    1, 0, 0, 0, 0);
+            serverWorld.spawnParticles(ParticleTypes.ELECTRIC_SPARK,
+                    target.getX(), target.getY() + 1.0, target.getZ(),
+                    50, 0.5, 0.8, 0.5, 0.2);
+            serverWorld.spawnParticles(ParticleTypes.END_ROD,
+                    target.getX(), target.getY() + 1.5, target.getZ(),
+                    30, 0.4, 0.6, 0.4, 0.15);
+        }
+    }
+
+    private int getCharge(ItemStack stack) {
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+        return nbt.getInt(CHARGE_KEY);
+    }
+
+    private void setCharge(ItemStack stack, int charge) {
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+        nbt.putInt(CHARGE_KEY, charge);
+        stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+    }
+
+    private String getChargeBar(int charge) {
+        return "[" + "█".repeat(charge) + "░".repeat(MAX_CHARGE - charge) + "]";
+    }
+
+    private Formatting getChargeColor(int charge) {
+        return switch (charge) {
+            case 1 -> Formatting.YELLOW;
+            case 2 -> Formatting.GOLD;
+            case 3 -> Formatting.RED;
+            default -> Formatting.WHITE;
+        };
+    }
+
+    @Override
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, RegistryWrapper.WrapperLookup registryLookup) {
+        int charge = getCharge(stack);
+        tooltip.add(Text.literal("Charge: " + getChargeBar(charge)).formatted(getChargeColor(charge)));
+        tooltip.add(Text.literal("Hit 3 times to unleash armor-piercing damage!").formatted(Formatting.GRAY));
+        tooltip.add(Text.literal("Full charge: 3 ❤ true damage").formatted(Formatting.RED));
+    }
+}
