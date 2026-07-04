@@ -1,5 +1,7 @@
 package com.hamblade.item;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -42,112 +44,26 @@ public class HamBladeItem extends SwordItem {
                 Text.literal("⚡ HamBlade charged: " + getChargeBar(charge)).formatted(getChargeColor(charge)),
                 true
             );
-
             world.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
                     SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS,
                     0.5f, 0.8f + (charge * 0.2f));
-
             spawnChargeParticles(world, target, charge);
-
         } else {
             charge = 0;
             setCharge(stack, charge);
-
-            float currentHealth = target.getHealth();
-            float newHealth = currentHealth - ARMOR_PIERCE_DAMAGE;
+            float newHealth = target.getHealth() - ARMOR_PIERCE_DAMAGE;
             target.setHealth(Math.max(0, newHealth));
-
-            if (newHealth <= 0) {
-                target.kill();
-            }
+            if (newHealth <= 0) target.kill();
 
             player.sendMessage(
                 Text.literal("💥 FULL CHARGE! 3 Hearts of armor-piercing damage!").formatted(Formatting.RED),
                 true
             );
-
             world.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
                     SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 0.6f, 1.5f);
-
             world.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
                     SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.2f);
-
             spawnDischargeParticles(world, target);
         }
 
         return super.postHit(stack, target, attacker);
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
-        super.inventoryTick(stack, world, entity, slot, selected);
-
-        if (selected && !world.isClient && world instanceof ServerWorld serverWorld) {
-            if (world.getTime() % 5 == 0) {
-                serverWorld.spawnParticles(ParticleTypes.END_ROD,
-                        entity.getX(), entity.getY() + 1.0, entity.getZ(),
-                        2, 0.3, 0.3, 0.3, 0.02);
-            }
-        }
-    }
-
-    private void spawnChargeParticles(World world, LivingEntity target, int charge) {
-        if (world instanceof ServerWorld serverWorld) {
-            int count = charge * 5;
-            serverWorld.spawnParticles(ParticleTypes.ELECTRIC_SPARK,
-                    target.getX(), target.getY() + 1.0, target.getZ(),
-                    count, 0.3, 0.3, 0.3, 0.1);
-            serverWorld.spawnParticles(ParticleTypes.END_ROD,
-                    target.getX(), target.getY() + 1.0, target.getZ(),
-                    count, 0.2, 0.5, 0.2, 0.05);
-        }
-    }
-
-    private void spawnDischargeParticles(World world, LivingEntity target) {
-        if (world instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.FLASH,
-                    target.getX(), target.getY() + 1.0, target.getZ(),
-                    1, 0, 0, 0, 0);
-            serverWorld.spawnParticles(ParticleTypes.ELECTRIC_SPARK,
-                    target.getX(), target.getY() + 1.0, target.getZ(),
-                    50, 0.5, 0.8, 0.5, 0.2);
-            serverWorld.spawnParticles(ParticleTypes.END_ROD,
-                    target.getX(), target.getY() + 1.5, target.getZ(),
-                    30, 0.4, 0.6, 0.4, 0.15);
-        }
-    }
-
-    private int getCharge(ItemStack stack) {
-        NbtCompound nbt = stack.getOrCreateNbt();
-        return nbt.getInt(CHARGE_KEY);
-    }
-
-    private void setCharge(ItemStack stack, int charge) {
-        NbtCompound nbt = stack.getOrCreateNbt();
-        nbt.putInt(CHARGE_KEY, charge);
-    }
-
-    private String getChargeBar(int charge) {
-        String filled = "█".repeat(charge);
-        String empty = "░".repeat(MAX_CHARGE - charge);
-        return "[" + filled + empty + "]";
-    }
-
-    private Formatting getChargeColor(int charge) {
-        return switch (charge) {
-            case 1 -> Formatting.YELLOW;
-            case 2 -> Formatting.GOLD;
-            case 3 -> Formatting.RED;
-            default -> Formatting.WHITE;
-        };
-    }
-
-    @Override
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, Item.TooltipContext context) {
-        super.appendTooltip(stack, world, tooltip, context);
-        int charge = getCharge(stack);
-        tooltip.add(Text.literal("Charge: " + getChargeBar(charge)).formatted(getChargeColor(charge)));
-        tooltip.add(Text.literal("Hit 3 times to unleash armor-piercing damage!").formatted(Formatting.GRAY));
-        tooltip.add(Text.literal("Full charge: 3 ❤ true damage").formatted(Formatting.RED));
-    }
-}
