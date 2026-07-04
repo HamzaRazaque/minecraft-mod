@@ -25,7 +25,6 @@ public class ModItems {
                 HAM_BLADE
         );
 
-        // Add to combat item group
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries -> {
             entries.add(HAM_BLADE);
         });
