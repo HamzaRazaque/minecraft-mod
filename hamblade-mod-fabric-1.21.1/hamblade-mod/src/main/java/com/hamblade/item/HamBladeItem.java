@@ -3,8 +3,8 @@ package com.hamblade.item;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.SwordItem;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.nbt.NbtCompound;
@@ -17,60 +17,46 @@ import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 
 import java.util.List;
-import net.minecraft.client.item.TooltipContext;
 
 public class HamBladeItem extends SwordItem {
 
-    // NBT key for charge level (0-3)
     private static final String CHARGE_KEY = "HamBladeCharge";
     private static final int MAX_CHARGE = 3;
-    // Armor-piercing damage in half-hearts (6 half-hearts = 3 hearts)
     private static final float ARMOR_PIERCE_DAMAGE = 6.0f;
 
     public HamBladeItem(ToolMaterial material, Item.Settings settings) {
         super(material, settings);
     }
 
-    /**
-     * Called when this sword hits an entity.
-     * Charges up on each hit. On max charge, deals armor-piercing 3-heart damage.
-     */
     @Override
-    public boolean postHit(net.minecraft.item.ItemStack stack, LivingEntity target, LivingEntity attacker) {
+    public boolean postHit(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         if (!(attacker instanceof PlayerEntity player)) return super.postHit(stack, target, attacker);
 
         World world = attacker.getWorld();
         int charge = getCharge(stack);
 
         if (charge < MAX_CHARGE) {
-            // Increase charge
             charge++;
             setCharge(stack, charge);
             player.sendMessage(
                 Text.literal("⚡ HamBlade charged: " + getChargeBar(charge)).formatted(getChargeColor(charge)),
-                true // action bar
+                true
             );
 
-            // Play charge sound
             world.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
                     SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS,
                     0.5f, 0.8f + (charge * 0.2f));
 
-            // Spawn lightsaber particles
             spawnChargeParticles(world, target, charge);
 
         } else {
-            // FULLY CHARGED — deal armor-piercing damage
             charge = 0;
             setCharge(stack, charge);
 
-            // Deal true damage (bypasses armor) via direct health reduction
             float currentHealth = target.getHealth();
             float newHealth = currentHealth - ARMOR_PIERCE_DAMAGE;
-
             target.setHealth(Math.max(0, newHealth));
 
-            // Kill if health depleted
             if (newHealth <= 0) {
                 target.kill();
             }
@@ -80,7 +66,6 @@ public class HamBladeItem extends SwordItem {
                 true
             );
 
-            // Epic discharge sound + particles
             world.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
                     SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 0.6f, 1.5f);
 
@@ -93,16 +78,12 @@ public class HamBladeItem extends SwordItem {
         return super.postHit(stack, target, attacker);
     }
 
-    /**
-     * Tick the item to show ambient lightsaber particles when held.
-     */
     @Override
-    public void inventoryTick(net.minecraft.item.ItemStack stack, World world, Entity entity, int slot, boolean selected) {
+    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, world, entity, slot, selected);
 
         if (selected && !world.isClient && world instanceof ServerWorld serverWorld) {
             if (world.getTime() % 5 == 0) {
-                // Ambient glow particles around the player holding the blade
                 serverWorld.spawnParticles(ParticleTypes.END_ROD,
                         entity.getX(), entity.getY() + 1.0, entity.getZ(),
                         2, 0.3, 0.3, 0.3, 0.02);
@@ -136,12 +117,12 @@ public class HamBladeItem extends SwordItem {
         }
     }
 
-    private int getCharge(net.minecraft.item.ItemStack stack) {
+    private int getCharge(ItemStack stack) {
         NbtCompound nbt = stack.getOrCreateNbt();
         return nbt.getInt(CHARGE_KEY);
     }
 
-    private void setCharge(net.minecraft.item.ItemStack stack, int charge) {
+    private void setCharge(ItemStack stack, int charge) {
         NbtCompound nbt = stack.getOrCreateNbt();
         nbt.putInt(CHARGE_KEY, charge);
     }
@@ -162,7 +143,7 @@ public class HamBladeItem extends SwordItem {
     }
 
     @Override
-    public void appendTooltip(net.minecraft.item.ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, Item.TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
         int charge = getCharge(stack);
         tooltip.add(Text.literal("Charge: " + getChargeBar(charge)).formatted(getChargeColor(charge)));
