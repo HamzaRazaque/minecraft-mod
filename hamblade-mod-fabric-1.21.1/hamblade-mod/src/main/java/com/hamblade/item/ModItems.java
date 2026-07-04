@@ -4,7 +4,7 @@ import com.hamblade.HamBladeMod;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ToolMaterial;
+import net.minecraft.item.ToolMaterials;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -12,7 +12,7 @@ import net.minecraft.util.Identifier;
 public class ModItems {
 
     public static final HamBladeItem HAM_BLADE = new HamBladeItem(
-            ToolMaterial.NETHERITE,
+            ToolMaterials.NETHERITE,
             new Item.Settings()
                     .maxCount(1)
                     .rarity(net.minecraft.util.Rarity.EPIC)
