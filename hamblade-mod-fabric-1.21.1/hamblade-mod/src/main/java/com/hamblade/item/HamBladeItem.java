@@ -132,8 +132,7 @@ public class HamBladeItem extends SwordItem {
         };
     }
 
-    @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, RegistryWrapper.WrapperLookup registryLookup) {
+    public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, RegistryWrapper.WrapperLookup registryLookup) {
         int charge = getCharge(stack);
         tooltip.add(Text.literal("Charge: " + getChargeBar(charge)).formatted(getChargeColor(charge)));
         tooltip.add(Text.literal("Hit 3 times to unleash armor-piercing damage!").formatted(Formatting.GRAY));
