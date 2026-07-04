@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "hamblade",
+  "version": "${version}",
+  "name": "HamBlade",
+  "description": "Adds the HamBlade - a lightsaber sword that charges up and deals 3 hearts of armor-piercing damage!",
+  "authors": ["HamBladeMod"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.hamblade.HamBladeMod"]
+  },
+  "mixins": ["hamblade.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.5",
+    "fabric-api": "*",
+    "minecraft": "1.21.1"
+  }
+}
